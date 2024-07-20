@@ -2,7 +2,7 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from unidecode import unidecode
 
-def find_closest_english_name(arabic_name, english_names, threshold=35):
+def find_closest_english_name(arabic_name, english_names, threshold=50, scaling_factor=1.2):
     transliterated_arabic_name = unidecode(arabic_name)
     
     closest_name = None
@@ -11,8 +11,11 @@ def find_closest_english_name(arabic_name, english_names, threshold=35):
     for english_name in english_names:
         similarity = fuzz.ratio(transliterated_arabic_name, english_name)
         
-        if similarity > highest_similarity:
-            highest_similarity = similarity
+        # Apply scaling factor
+        adjusted_similarity = similarity * scaling_factor
+        
+        if adjusted_similarity > highest_similarity:
+            highest_similarity = adjusted_similarity
             closest_name = english_name
     
     if highest_similarity >= threshold:
@@ -40,14 +43,12 @@ if __name__ == "__main__":
             if closest_name is None:
                 results.append((arabic_name, "No Match", "No Match"))
             else:
+                # Scale similarity score back to the 0-100 range
+                similarity_score = min(100, similarity_score)  # Ensure it does not exceed 100
                 results.append((arabic_name, closest_name, similarity_score))
         
         # Convert the results to a DataFrame and save to a new CSV file
         results_df = pd.DataFrame(results, columns=['Arabic Name', 'Closest English Name', 'Similarity Score'])
-        print("DataFrame created successfully")
-        
-        # Debugging: print first few rows to ensure correctness
-        print(results_df.head())
         
         # Save to CSV
         results_df.to_csv('Datasets/Matched_Names.csv', index=False)
