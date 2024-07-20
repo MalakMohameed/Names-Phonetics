@@ -1,39 +1,57 @@
-import jellyfish
+import pandas as pd
+from fuzzywuzzy import fuzz
 from unidecode import unidecode
 
-def find_closest_english_name(arabic_name, english_names):
-    arabic_soundex = jellyfish.soundex(unidecode(arabic_name))
+def find_closest_english_name(arabic_name, english_names, threshold=35):
+    transliterated_arabic_name = unidecode(arabic_name)
     
     closest_name = None
     highest_similarity = 0
     
     for english_name in english_names:
-        english_soundex = jellyfish.soundex(unidecode(english_name))
-        distance = jellyfish.damerau_levenshtein_distance(arabic_soundex, english_soundex)
+        similarity = fuzz.ratio(transliterated_arabic_name, english_name)
         
-        # Compute a similarity score based on distance
-        similarity_score = 100 - distance
-        
-        if similarity_score > highest_similarity:
-            highest_similarity = similarity_score
+        if similarity > highest_similarity:
+            highest_similarity = similarity
             closest_name = english_name
     
-    return closest_name, highest_similarity
+    if highest_similarity >= threshold:
+        return closest_name, highest_similarity
+    else:
+        return None, highest_similarity
 
 # Example usage
 if __name__ == "__main__":
-    # Example Arabic name (without extra quotes)
-    arabic_name = "عبد الرازق"
+    try:
+        # Read Arabic names from a CSV file
+        arabic_names_df = pd.read_csv('Datasets/Arabic_Names.csv')
+        arabic_names = arabic_names_df['names'].tolist()
+        
+        # Read English names from another CSV file
+        english_names_df = pd.read_csv('Datasets/English_Names.csv')
+        english_names = english_names_df['names'].tolist()
+        
+        # Create a list to store the results
+        results = []
+        
+        # Iterate over each Arabic name
+        for arabic_name in arabic_names:
+            closest_name, similarity_score = find_closest_english_name(arabic_name, english_names)
+            if closest_name is None:
+                results.append((arabic_name, "No Match", "No Match"))
+            else:
+                results.append((arabic_name, closest_name, similarity_score))
+        
+        # Convert the results to a DataFrame and save to a new CSV file
+        results_df = pd.DataFrame(results, columns=['Arabic Name', 'Closest English Name', 'Similarity Score'])
+        print("DataFrame created successfully")
+        
+        # Debugging: print first few rows to ensure correctness
+        print(results_df.head())
+        
+        # Save to CSV
+        results_df.to_csv('Datasets/Matched_Names.csv', index=False)
+        print("File saved successfully")
     
-    # Example list of English names
-    english_names = [
-        "Mohammed", "Muhammad", "Mahmoud", "Ahmad", "Mehmet", "Abd el razeq",
-        "Abdelrazek", "Ali", "Aly", "ُAely", "Aaly", "Sama", "John", "Mohamed", "Malak", "Malk", "Jana Bahey", "Janna", "Jannah"
-    ]
-    
-    # Find the closest sounding English name using Soundex from jellyfish
-    closest_name, similarity_score = find_closest_english_name(arabic_name, english_names)
-    
-    print(f"Arabic Name: {arabic_name}")
-    print(f"Closest English Name: {closest_name}")
-    print(f"Similarity Score: {similarity_score:.2f}%")
+    except Exception as e:
+        print(f"An error occurred: {e}")
