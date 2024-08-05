@@ -1,6 +1,6 @@
 # Cross-Language Name Matching Model
 
-**NameMatchX** is a sophisticated cross-language name matching model designed to enhance accuracy in identifying and matching names across different languages. This project utilizes advanced fuzzy matching algorithms and phonetic similarity measures to improve name matching within multilingual databases, especially between Arabic and English names.
+This is a sophisticated cross-language name matching model designed to enhance accuracy in identifying and matching names across different languages. This project utilizes advanced fuzzy matching algorithms and phonetic similarity measures to improve name matching within multilingual databases, especially between Arabic and English names.
 
 ## Features
 
